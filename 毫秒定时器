@@ -1,0 +1,62 @@
+using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Timers;
+
+class Program
+{
+    static int i = 0;
+   static HighPrecisionTimer timer = new HighPrecisionTimer(10000);//1毫秒
+    static void Main(string[] args)
+    {
+        timer.Elapsed += Timer_Elapsed;
+        timer.Start();
+    }
+    private static void Timer_Elapsed(object sender, EventArgs e)
+    {
+        Console.WriteLine("Timer elapsed at {0} {1}", DateTime.Now,i);
+        if(i++>1003)
+        {
+            timer.Stop();
+            Console.ReadKey();
+        }
+    }
+}
+class HighPrecisionTimer
+{
+    private readonly Stopwatch _stopwatch = new Stopwatch();
+    private readonly long _interval;
+    private bool _running;
+    public HighPrecisionTimer(long interval)
+    {
+        _interval = interval;
+    }
+
+    public void Start()
+    {
+        _running = true;
+        _stopwatch.Start(); 
+        new Thread(Run).Start();
+    }
+
+    public void Stop()
+    {
+        _running = false;
+        _stopwatch.Stop();
+    }
+
+    public event EventHandler Elapsed;
+
+    private void Run()
+    {
+        while (_running)
+        {
+            var start = _stopwatch.ElapsedTicks;
+            while (_stopwatch.ElapsedTicks - start < _interval)
+            {
+                Thread.SpinWait(1); // 暂停 1 个时钟周期以减少 CPU 使用
+            }
+            Elapsed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+}
