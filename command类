@@ -1,4 +1,52 @@
-  public class RelayCommand
+ public abstract class CommandBase
+     : ICommand
+ {
+     /// <summary>
+     ///当发生影响命令是否应执行的变化时出现。
+     /// </summary>
+     public event EventHandler CanExecuteChanged
+     {
+         add { System.Windows.Input.CommandManager.RequerySuggested += value; }
+         remove { System.Windows.Input.CommandManager.RequerySuggested -= value; }
+     }
+     /// <summary>
+     /// 引发 <see cref="CanExecuteChanged" /> 事件。
+     /// </summary>
+     public void OnCanExecuteChanged()
+     {
+         System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+     }
+     /// <summary>
+     ///  定义确定命令是否能在当前状态下执行的方法。
+     /// </summary>
+     /// <param name="parameter"命令使用的数据。 如果命令不需要传递数据，该对象可以设置为空。</param>
+     /// <returns>
+     /// 如果可以执行该命令，则为 true；否则为 false。
+     /// </returns>
+     public virtual bool CanExecute(object parameter)
+     {
+         return true;
+     }
+     /// <summary>
+     ///  定义调用命令时要调用的方法。
+     /// </summary>
+     /// <param name="parameter">命令使用的数据。 如果命令不需要传递数据，该对象可以设置为空。</param>
+     public void Execute(object parameter)
+     {
+         if (!CanExecute(parameter))
+         {
+             return;
+         }
+         OnExecute(parameter);
+     }
+     /// <summary>
+     /// 执行命令。
+     /// </summary>
+     /// <param name="parameter">The parameter.</param>
+     protected abstract void OnExecute(object parameter);
+ }
+
+public class RelayCommand
       : CommandBase
   {
       private Action<object> execute;
