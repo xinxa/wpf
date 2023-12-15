@@ -1,0 +1,24 @@
+internal class ClassA: INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler PropertyChanged;
+    private string _text;
+    public string text
+    {
+        get { return _text; }
+        set
+        {
+            if (_text != value)
+            {
+                _text = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(text)));
+            }
+        }
+    }
+  
+    private RelayCommand relayCommand;
+    public RelayCommand RelayCommand => relayCommand ?? (relayCommand = new RelayCommand(TestA));
+    public void TestA(object obj)
+    {
+        MessageBox.Show("类型A");
+    }
+}
