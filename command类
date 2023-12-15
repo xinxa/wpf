@@ -1,0 +1,46 @@
+  public class RelayCommand
+      : CommandBase
+  {
+      private Action<object> execute;
+      private Func<object, bool> canExecute;
+
+      /// <summary>
+      /// 初始化 <see cref="RelayCommand"/> 类的新实例。
+      /// </summary>
+      /// <param name="execute">The execute.</param>
+      /// <param name="canExecute">The can execute.</param>
+      public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+      {
+          if (execute == null)
+          {
+              throw new ArgumentNullException("execute");
+          }
+          if (canExecute == null)
+          {
+              //如果不能执行，则始终可执行
+              canExecute = (o) => true;
+          }
+          this.execute = execute;
+          this.canExecute = canExecute;
+      }
+
+      /// <summary>
+      /// 定义确定命令是否能在当前状态下执行的方法。
+      /// </summary>
+      /// <param name="parameter">命令使用的数据。如果命令不需要传递数据，该对象可以设置为空。</param>
+      /// <returns>
+      /// 如果可以执行该命令，则为 true；否则为 false。
+      /// </returns>
+      public override bool CanExecute(object parameter)
+      {
+          return canExecute(parameter);
+      }
+      /// <summary>
+      /// 执行命令。
+      /// </summary>
+      /// <param name="parameter">参数。</param>
+      protected override void OnExecute(object parameter)
+      {
+          execute(parameter);
+      }
+  }
