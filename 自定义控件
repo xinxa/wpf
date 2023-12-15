@@ -1,0 +1,52 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Animation;
+
+namespace FirstFloor.ModernUI.App.Converter
+{
+    public class CustomText : TextBlock
+    {
+        public string mainText
+        {
+            get { return (string)GetValue(CustomTexts); }
+            set { SetValue(CustomTexts, value); }
+        }
+		//这段代码是一个自定义的 TextBlock，名为 CustomText，它有一个名为 mainText 的依赖属性
+        public static readonly DependencyProperty CustomTexts = DependencyProperty.Register("mainText", typeof(string), typeof(CustomText), 
+		//当这个属性的值发生变化时，会触发 OnCustomTextChangeCallBack 方法。
+		new PropertyMetadata(OnCustomTextChangeCallBack));
+        public static void OnCustomTextChangeCallBack(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+			//CustomText 实例，并将其可见性设置为 Visible，然后调用 OnCustomTextChanged 方法来执行动画效果
+            CustomText custromtext = d as CustomText;
+            if (custromtext != null)
+            {
+                custromtext.Visibility = Visibility.Visible;
+                custromtext.OnCustomTextChanged(custromtext);
+            }
+        }
+		//动画效果
+        protected virtual void OnCustomTextChanged(CustomText dasd)
+        {
+            Storyboard storyboard = new Storyboard();
+            DoubleAnimation opacityAnimation1 = new DoubleAnimation();
+            opacityAnimation1.From = 1.0;
+            opacityAnimation1.To = 0.0;
+            opacityAnimation1.Duration = new Duration(TimeSpan.FromSeconds(3));
+            Storyboard.SetTarget(opacityAnimation1, dasd);
+            Storyboard.SetTargetProperty(opacityAnimation1, new PropertyPath(TextBlock.OpacityProperty));
+            storyboard.Children.Add(opacityAnimation1);
+            storyboard.Completed += (sender, e) =>
+            {
+                dasd.Visibility = Visibility.Collapsed;
+            };
+            // 启动动画
+            storyboard.Begin();
+        }
+    }
+}
