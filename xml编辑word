@@ -1,0 +1,378 @@
+using System;
+using System.IO;
+using System.Collections.Concurrent;
+using MathNet.Numerics.LinearAlgebra;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using DocumentFormat.OpenXml;
+using A = DocumentFormat.OpenXml.Drawing;
+using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
+using DocumentFormat.OpenXml.CustomProperties;
+
+Dictionary<string, string> table_key_vale_condition = new Dictionary<string, string>() {
+    {"样品名称","演示"},{"接通时间","演示"},
+    {"预设试验次数","演示"},{"断开时间","演示"},
+    {"实际循环次数","演示"},{"触点温升监测指标","演示"},
+    {"累计失效设置值","演示"},{"负载电压","演示"},
+    {"线圈电压","演示"},{"负载电流","演示"},
+    {"环境温度","演示"},{"粘故障监测指标","演示"},
+    {"环境湿度","演示"},{"断故障监测指标","演示"}
+};
+Dictionary<string, Tuple<double, double, double, double>> table_key_vale_selftest = new Dictionary<string, Tuple<double, double, double, double>>() {
+    {"1",Tuple.Create(new double(),new double(),new double(),new double())},
+    {"2",Tuple.Create(new double(),new double(),new double(),new double())},
+    {"3",Tuple.Create(new double(),new double(),new double(),new double())},
+    {"4",Tuple.Create(new double(),new double(),new double(),new double())},
+    {"5",Tuple.Create(new double(),new double(),new double(),new double())},
+    {"6",Tuple.Create(new double(),new double(),new double(),new double())},
+    {"7",Tuple.Create(new double(),new double(),new double(),new double())},
+    {"8",Tuple.Create(new double(),new double(),new double(),new double())},
+};
+string deskpath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+string foldername = "试验数据";
+string folderpath = Path.Combine(deskpath, foldername);
+//简化代码
+void AddCell(TableRow row, string text, bool colo)
+{
+    Paragraph paragraph = new Paragraph();
+    Run run = new Run();
+    run.Append(new Text(text));
+    if (colo)
+    {
+        run.RunProperties = new RunProperties(new Color() { Val = "000000" });
+    }
+    else
+    {
+        run.RunProperties = new RunProperties(new Color() { Val = "FF0000" });
+    }
+    paragraph.Append(run);
+    TableCell cell = new TableCell(paragraph);
+    cell.Append(new TableCellProperties(
+            new TableCellWidth() { Type = TableWidthUnitValues.Dxa, Width = "1800" }));
+    row.Append(cell);
+}
+void AddDataRow(Table table, string param1, string tech1, string param2, string tech2, bool b)
+{
+    b = true;
+    TableRow dataRow = new TableRow();
+    AddCell(dataRow, param1, b);
+    AddCell(dataRow, tech1, b);
+    AddCell(dataRow, param2, b);
+    AddCell(dataRow, tech2, b);
+    table.Append(dataRow);
+}
+void AddDataRowsf(Table table, string str1, double str2, double str3, double str4, double str5)
+{
+    bool b = true;
+    TableRow dataRow = new TableRow();
+    AddCell(dataRow, str1, b);
+    AddCell(dataRow, str2.ToString(), false);
+    AddCell(dataRow, str3.ToString(), false);
+    AddCell(dataRow, str4.ToString(), false);
+    AddCell(dataRow, str5.ToString(), false);
+    table.Append(dataRow);
+}
+//简化代码
+if (!Directory.Exists(folderpath))
+{
+    Directory.CreateDirectory(folderpath);
+}
+string str = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\data.docx";
+string samples = "0001";
+
+CreateDocument(str, DateTime.Now.ToString("yyyy-MM-dd") + samples);
+CreateParagraph(str, "条件",true);
+CreateTable(str);
+CreateParagraph(str, "自检及首次试验波形", true);
+CreateParagraph(str, "数据", false);
+CreateTable_st(str);
+CreateParagraph(str, "波形", false);
+InsertAPicture(str, "F://test.jpg");
+void CreateDocument(string filepath, string content)
+{
+
+    using (WordprocessingDocument doc = WordprocessingDocument.Create(filepath, DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+    {
+        //添加主文档部分
+        MainDocumentPart mainDocumentPart = doc.AddMainDocumentPart();
+
+        //创建文档结构 添加文本
+        mainDocumentPart.Document = new Document();
+        Body body = mainDocumentPart.Document.AppendChild(new Body());
+        Paragraph paragraph = body.AppendChild(new Paragraph());
+        paragraph.Append(new ParagraphProperties(new Justification() { Val = JustificationValues.Left }));
+        Run run = paragraph.AppendChild(new Run());
+        run.AppendChild(new Text(content));
+
+        run.RunProperties = new RunProperties(new FontSize() { Val = "24" }, new RunFonts() { Ascii = "Arial", HighAnsi = "Arial" });
+        Break lineBreak = new Break() { Type = BreakValues.TextWrapping };
+        paragraph.Append(lineBreak);
+    }
+
+}
+//条件
+void CreateTable(string fileName)
+{
+    /*
+     段落对齐
+     */
+    using (WordprocessingDocument doc
+        = WordprocessingDocument.Open(fileName, true))
+    {
+        //创建一个空表
+        Table table = CreateTab();
+        // 添加表头行
+        TableRow headerRow = new TableRow();
+        // 添加表头单元格
+        AddCell(headerRow, "参数名称", true);
+        AddCell(headerRow, "技术条件", true);
+        AddCell(headerRow, "参数名称", true);
+        AddCell(headerRow, "技术条件", true);
+        // 将表头行添加到表格
+        table.Append(headerRow);
+        // 添加数据行
+        AddDataRow(table, "样品名称", table_key_vale_condition["样品名称"], "接通时间", table_key_vale_condition["接通时间"], true);
+        AddDataRow(table, "预设试验次数", table_key_vale_condition["预设试验次数"], "样品名称", table_key_vale_condition["样品名称"], true);
+        AddDataRow(table, "实际循环次数", table_key_vale_condition["实际循环次数"], "触点温升监测指标", table_key_vale_condition["触点温升监测指标"], true);
+        AddDataRow(table, "累计失效设置值", table_key_vale_condition["累计失效设置值"], "负载电压", table_key_vale_condition["负载电压"], true);
+        AddDataRow(table, "线圈电压", table_key_vale_condition["线圈电压"], "负载电流", table_key_vale_condition["负载电流"], true);
+        AddDataRow(table, "环境温度", table_key_vale_condition["环境温度"], "粘故障监测指标", table_key_vale_condition["粘故障监测指标"], true);
+        AddDataRow(table, "环境湿度", table_key_vale_condition["环境湿度"], "断故障监测指标", table_key_vale_condition["断故障监测指标"], true);
+
+        if (doc.MainDocumentPart is null || doc.MainDocumentPart.Document.Body is null)
+        {
+            throw new ArgumentNullException("MainDocumentPart and/or Body is null.");
+        }
+
+        // Append the table to the document.
+        doc.MainDocumentPart.Document.Body.Append(table);
+
+    }
+    //处理段落
+
+}
+
+void CreateTable_st(string fileName)
+{
+    /*
+     段落对齐
+     */
+
+
+    using (WordprocessingDocument doc
+        = WordprocessingDocument.Open(fileName, true))
+    {
+        //创建一个空表
+        Table table = CreateTab();
+        // 添加表头行
+        TableRow headerRow = new TableRow();
+        // 添加表头单元格
+        AddCell(headerRow, "监测路号", true);
+        AddCell(headerRow, "动合断(V)", true);
+        AddCell(headerRow, "静合粘(V)", true);
+        AddCell(headerRow, "静合粘(V)", true);
+        AddCell(headerRow, "动合断(V)", true);
+        // 将表头行添加到表格
+        table.Append(headerRow);
+        // 添加数据行
+        AddDataRowsf(table, "1", table_key_vale_selftest["1"].Item1, table_key_vale_selftest["1"].Item2, table_key_vale_selftest["1"].Item3, table_key_vale_selftest["1"].Item4);
+
+        AddDataRowsf(table, "2", table_key_vale_selftest["2"].Item1, table_key_vale_selftest["2"].Item2, table_key_vale_selftest["2"].Item3, table_key_vale_selftest["2"].Item4);
+
+        AddDataRowsf(table, "3", table_key_vale_selftest["3"].Item1, table_key_vale_selftest["3"].Item2, table_key_vale_selftest["3"].Item3, table_key_vale_selftest["3"].Item4);
+
+        AddDataRowsf(table, "4", table_key_vale_selftest["4"].Item1, table_key_vale_selftest["4"].Item2, table_key_vale_selftest["4"].Item3, table_key_vale_selftest["4"].Item4);
+
+        AddDataRowsf(table, "5", table_key_vale_selftest["5"].Item1, table_key_vale_selftest["5"].Item2, table_key_vale_selftest["5"].Item3, table_key_vale_selftest["5"].Item4);
+
+        AddDataRowsf(table, "6", table_key_vale_selftest["6"].Item1, table_key_vale_selftest["6"].Item2, table_key_vale_selftest["6"].Item3, table_key_vale_selftest["6"].Item4);
+
+        AddDataRowsf(table, "7", table_key_vale_selftest["7"].Item1, table_key_vale_selftest["7"].Item2, table_key_vale_selftest["7"].Item3, table_key_vale_selftest["7"].Item4);
+
+        AddDataRowsf(table, "8", table_key_vale_selftest["8"].Item1, table_key_vale_selftest["8"].Item2, table_key_vale_selftest["8"].Item3, table_key_vale_selftest["8"].Item4);
+
+        if (doc.MainDocumentPart is null || doc.MainDocumentPart.Document.Body is null)
+        {
+            throw new ArgumentNullException("MainDocumentPart and/or Body is null.");
+        }
+
+        // Append the table to the document.
+        doc.MainDocumentPart.Document.Body.Append(table);
+    }
+    //处理段落
+
+}
+
+Table CreateTab()
+{
+    Table table = new Table();
+    TableProperties tblProp = new TableProperties(
+      new TableBorders(
+          new TopBorder()
+          {
+              Val =
+              new EnumValue<BorderValues>(BorderValues.Single),
+              Size = 8
+          },
+          new BottomBorder()
+          {
+              Val =
+              new EnumValue<BorderValues>(BorderValues.Single),
+              Size = 8
+          },
+          new LeftBorder()
+          {
+              Val =
+              new EnumValue<BorderValues>(BorderValues.Single),
+              Size = 8
+          },
+          new RightBorder()
+          {
+              Val =
+              new EnumValue<BorderValues>(BorderValues.Single),
+              Size = 8
+          },
+          new InsideHorizontalBorder()
+          {
+              Val =
+              new EnumValue<BorderValues>(BorderValues.Single),
+              Size = 8
+          },
+          new InsideVerticalBorder()
+          {
+              Val =
+              new EnumValue<BorderValues>(BorderValues.Single),
+              Size = 8
+          }
+      )
+  );
+    // 将 Table Properties 对象追加到空表中
+    table.AppendChild<TableProperties>(tblProp);
+    return table;
+}
+
+void CreateParagraph(string filepath, string txt, bool title)
+{
+    // Open a WordprocessingDocument for editing using the filepath.
+    using (WordprocessingDocument wordprocessingDocument = WordprocessingDocument.Open(filepath, true))
+    {
+        if (wordprocessingDocument is null)
+        {
+            throw new ArgumentNullException(nameof(wordprocessingDocument));
+        }
+        // Assign a reference to the existing document body.
+        MainDocumentPart mainDocumentPart = wordprocessingDocument.MainDocumentPart ?? wordprocessingDocument.AddMainDocumentPart();
+        mainDocumentPart.Document ??= new Document();
+        Body body = mainDocumentPart.Document.Body ?? mainDocumentPart.Document.AppendChild(new Body());
+
+        // Add a paragraph with some text.
+        Paragraph para = body.AppendChild(new Paragraph());
+        para.Append(new ParagraphProperties(new Justification() { Val = JustificationValues.Left }));
+        para.Append(new Break() { Type = BreakValues.TextWrapping });
+        Run run;
+        if (title)
+            run = para.AppendChild(new Run(new RunProperties(new RunProperties(new FontSize() { Val = "16" }))));
+        else
+            run = para.AppendChild(new Run(new RunProperties(new RunProperties(new FontSize() { Val = "10" }))));
+        run.AppendChild(new Text(txt));
+        para.Append(new Break() { Type = BreakValues.TextWrapping });
+    }
+}
+
+static void InsertAPicture(string document, string fileName)
+{
+    using (WordprocessingDocument wordprocessingDocument = WordprocessingDocument.Open(document, true))
+    {
+        if (wordprocessingDocument.MainDocumentPart is null)
+        {
+            throw new ArgumentNullException("MainDocumentPart is null.");
+        }
+
+        MainDocumentPart mainPart = wordprocessingDocument.MainDocumentPart;
+
+        ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Jpeg);
+
+        using (FileStream stream = new FileStream(fileName, FileMode.Open))
+        {
+            imagePart.FeedData(stream);
+        }
+
+        AddImageToBody(wordprocessingDocument, mainPart.GetIdOfPart(imagePart));
+    }
+}
+
+static void AddImageToBody(WordprocessingDocument wordDoc, string relationshipId)
+{
+    // Define the reference of the image.
+    var element =
+         new Drawing(
+             new DW.Inline(
+                 new DW.Extent() { Cx = 990000L, Cy = 792000L },
+                 new DW.EffectExtent()
+                 {
+                     LeftEdge = 0L,
+                     TopEdge = 0L,
+                     RightEdge = 0L,
+                     BottomEdge = 0L
+                 },
+                 new DW.DocProperties()
+                 {
+                     Id = (UInt32Value)1U,
+                     Name = "Picture 1"
+                 },
+                 new DW.NonVisualGraphicFrameDrawingProperties(
+                     new A.GraphicFrameLocks() { NoChangeAspect = true }),
+                 new A.Graphic(
+                     new A.GraphicData(
+                         new PIC.Picture(
+                             new PIC.NonVisualPictureProperties(
+                                 new PIC.NonVisualDrawingProperties()
+                                 {
+                                     Id = (UInt32Value)0U,
+                                     Name = "New Bitmap Image.jpg"
+                                 },
+                                 new PIC.NonVisualPictureDrawingProperties()),
+                             new PIC.BlipFill(
+                                 new A.Blip(
+                                     new A.BlipExtensionList(
+                                         new A.BlipExtension()
+                                         {
+                                             Uri =
+                                                "{28A0092B-C50C-407E-A947-70E740481C1C}"
+                                         })
+                                 )
+                                 {
+                                     Embed = relationshipId,
+                                     CompressionState =
+                                     A.BlipCompressionValues.Print
+                                 },
+                                 new A.Stretch(
+                                     new A.FillRectangle())),
+                             new PIC.ShapeProperties(
+                                 new A.Transform2D(
+                                     new A.Offset() { X = 0L, Y = 0L },
+                                     new A.Extents() { Cx = 990000L, Cy = 792000L }),
+                                 new A.PresetGeometry(
+                                     new A.AdjustValueList()
+                                 )
+                                 { Preset = A.ShapeTypeValues.Rectangle }))
+                     )
+                     { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" })
+             )
+             {
+                 DistanceFromTop = (UInt32Value)0U,
+                 DistanceFromBottom = (UInt32Value)0U,
+                 DistanceFromLeft = (UInt32Value)0U,
+                 DistanceFromRight = (UInt32Value)0U,
+                 EditId = "50D07946"
+             });
+
+    if (wordDoc.MainDocumentPart is null || wordDoc.MainDocumentPart.Document.Body is null)
+    {
+        throw new ArgumentNullException("MainDocumentPart and/or Body is null.");
+    }
+
+    // Append the reference to body, the element should be in a Run.
+    wordDoc.MainDocumentPart.Document.Body.AppendChild(new Paragraph(new Run(element)));
+}
