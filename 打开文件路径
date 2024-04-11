@@ -1,0 +1,2 @@
+var psi = new ProcessStartInfo（"Explorer","/select"+fi）
+  process.Start（Psi）;
