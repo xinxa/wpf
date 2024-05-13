@@ -5,10 +5,13 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace 测试语句
+namespace syntax
 {
-    internal class TimerTes
+    public class TimerTes
     {
+        //static void TimerCallbackMethodRLY_Magentic(uint id, uint msg, UIntPtr user, UIntPtr dw1, UIntPtr dw2)
+        //MultimediaTimer.TimerCallback callback_magentic
+
         // Windows Multimedia Timer API
         [DllImport("winmm.dll")]
         public static extern uint timeSetEvent(uint uDelay, uint uResolution, TimerCallback lpTimeProc, UIntPtr dwUser, uint fuEvent);
@@ -51,5 +54,7 @@ namespace 测试语句
                 timerID = 0;
             }
         }
+
+       
     }
 }
