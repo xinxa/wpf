@@ -1,0 +1,33 @@
+Style	控件样式	控件外观统一化
+ControlTemplate	控件模板	自定义控件外形
+DataTemplate	数据模板	列表/内容展示
+Brush / Color	画笔	颜色管理
+Converter	值转换器	绑定逻辑处理
+Object / ViewModel	实例化资源	数据上下文共享
+
+<Window.Resources>
+    <DataTemplate x:Key="EmployeeTemplate">
+        <StackPanel>
+            <TextBlock Text="{Binding Name}" />
+            <TextBlock Text="{Binding Department}" />
+        </StackPanel>
+    </DataTemplate>
+</Window.Resources>
+
+<ListBox ItemsSource="{Binding Employees}" ItemTemplate="{StaticResource EmployeeTemplate}" />
+
+<Grid>
+    <Grid.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="Red"/>
+    </Grid.Resources>
+
+    <DockPanel>
+        <DockPanel.Resources>
+            <SolidColorBrush x:Key="AccentBrush" Color="Blue"/>
+        </DockPanel.Resources>
+
+        <Button Background="{StaticResource AccentBrush}" Content="蓝色按钮"/>
+    </DockPanel>
+
+    <Button Background="{StaticResource AccentBrush}" Content="红色按钮"/>
+</Grid>
